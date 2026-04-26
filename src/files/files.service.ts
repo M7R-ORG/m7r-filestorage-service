@@ -4,7 +4,8 @@ import { v4 as uuidv4 } from 'uuid';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { IMAGE_EXTENSIONS, ImageVariant } from './files.constants';
-import { fileExists, findOriginal, generateVariants } from './files.helpers';
+import { fileExists, findOriginal, generateVariants, resolveImagePath } from './files.helpers';
+import { OpenedFile } from './files.types';
 
 @Injectable()
 export class FilesService {
@@ -22,43 +23,30 @@ export class FilesService {
     const ext = path.extname(file.originalname).toLowerCase();
     await fs.writeFile(path.join(dir, `original${ext}`), file.buffer);
 
-    if (IMAGE_EXTENSIONS.includes(file.originalname)) {
+    if (IMAGE_EXTENSIONS.includes(ext)) {
       await generateVariants(file.buffer, dir);
     }
 
     return fileId;
   }
 
-  async getFile(fileId: string): Promise<{ stream: fs.FileHandle; filePath: string }> {
-    const dir = path.join(this.storagePath, fileId);
-
-    const filePath = await findOriginal(dir);
-    if (!filePath) {
-      throw new NotFoundException('File not found');
-    }
-
-    return {
-      stream: await fs.open(filePath, 'r'),
-      filePath,
-    };
+  async getFile(fileId: string): Promise<OpenedFile> {
+    const filePath = await findOriginal(this.dirOf(fileId));
+    return this.openFile(filePath);
   }
 
-  async getImage(fileId: string, variant: ImageVariant): Promise<{ stream: fs.FileHandle; filePath: string }> {
-    const dir = path.join(this.storagePath, fileId);
+  async getImage(fileId: string, variant: ImageVariant): Promise<OpenedFile> {
+    const filePath = await resolveImagePath(this.dirOf(fileId), variant);
+    return this.openFile(filePath);
+  }
 
-    if (variant !== ImageVariant.Original) {
-      const variantPath = path.join(dir, `${variant}.webp`);
-      if (await fileExists(variantPath)) {
-        return {
-          stream: await fs.open(variantPath, 'r'),
-          filePath: variantPath,
-        };
-      }
-    }
+  private dirOf(fileId: string): string {
+    return path.join(this.storagePath, fileId);
+  }
 
-    const filePath = await findOriginal(dir);
+  private async openFile(filePath: string | null): Promise<OpenedFile> {
     if (!filePath) {
-      throw new NotFoundException('Image not found');
+      throw new NotFoundException('File not found');
     }
 
     return {
@@ -69,9 +57,12 @@ export class FilesService {
 
   async delete(fileId: string): Promise<void> {
     const dir = path.join(this.storagePath, fileId);
-    if (!(await fileExists(dir))) {
+    const hasFile = await fileExists(dir)
+
+    if (!hasFile) {
       throw new NotFoundException('File not found');
     }
+    
     await fs.rm(dir, { recursive: true });
   }
 }

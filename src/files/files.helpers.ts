@@ -1,7 +1,7 @@
 import * as sharp from 'sharp';
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { IMAGE_EXTENSIONS, VARIANTS } from './files.constants';
+import { ImageVariant, VARIANTS } from './files.constants';
 
 export async function fileExists(filePath: string): Promise<boolean> {
   try {
@@ -31,4 +31,15 @@ export async function findOriginal(dir: string): Promise<string | null> {
   } catch {
     return null;
   }
+}
+
+export async function resolveImagePath(dir: string, variant: ImageVariant): Promise<string | null> {
+  if (variant === ImageVariant.Original) {
+    return findOriginal(dir);
+  }
+
+  const variantPath = path.join(dir, `${variant}.webp`);
+  const hasFile = await fileExists(variantPath)
+  
+  return hasFile ? variantPath : null;
 }

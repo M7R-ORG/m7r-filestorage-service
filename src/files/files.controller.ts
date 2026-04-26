@@ -15,6 +15,7 @@ import { FilesService } from './files.service';
 import { UploadResponseDto } from './dto/upload-response.dto';
 import { DeleteResponseDto } from './dto/delete-response.dto';
 import { ImageVariant } from './files.constants';
+import { OpenedFile } from './files.types';
 
 @Controller('files')
 export class FilesController {
@@ -39,7 +40,7 @@ export class FilesController {
     @Query('variant') variant: ImageVariant,
     @Res() res: Response,
   ) {
-    const result = await this.filesService.getImage(id, variant || ImageVariant.Original);
+    const result = await this.filesService.getImage(id, variant);
     this.streamFile(res, result);
   }
 
@@ -49,7 +50,7 @@ export class FilesController {
     return { success: true };
   }
 
-  private streamFile(res: Response, result: { stream: any; filePath: string }) {
+  private streamFile(res: Response, result: OpenedFile) {
     res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
     res.sendFile(result.filePath);
     result.stream.close();
