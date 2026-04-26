@@ -1,0 +1,10 @@
+services:
+  filestorage-service:
+    image: samarkinivan/filestorage-service:latest
+    container_name: filestorage-service
+    restart: on-failure
+    env_file: .env
+    ports:
+      - '8086:8086'
+    volumes:
+      - ./.meta/files:/data/files
