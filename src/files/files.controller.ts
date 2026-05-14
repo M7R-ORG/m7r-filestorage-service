@@ -17,7 +17,7 @@ import { DeleteResponseDto } from './dto/delete-response.dto';
 import { ImageVariant } from './files.constants';
 import { OpenedFile } from './files.types';
 
-@Controller('files')
+@Controller()
 export class FilesController {
   constructor(private readonly filesService: FilesService) {}
 
