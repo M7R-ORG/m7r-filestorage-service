@@ -21,11 +21,11 @@ import { UploadFileInterceptor } from './files.interceptors';
 import { sendFileResponse } from './files.response';
 
 @Controller()
-@UseGuards(AccountGuard)
 export class FilesController {
   constructor(private readonly filesService: FilesService) {}
 
   @Post('upload')
+  @UseGuards(AccountGuard)
   @UseInterceptors(UploadFileInterceptor)
   async upload(
     @UploadedFile(RequiredFilePipe) file: Express.Multer.File,
@@ -51,6 +51,7 @@ export class FilesController {
   }
 
   @Delete(':id')
+  @UseGuards(AccountGuard)
   async delete(
     @Param('id', UuidV4Pipe) id: string,
   ): Promise<DeleteResponseDto> {
